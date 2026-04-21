@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to Rust Forge Gym</h1>
+
+<p>Test and improve your knowledge of Rust edge cases.</p>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_quizzes }}</div>
+        <div class="stat-label">Total Quizzes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_answered }}</div>
+        <div class="stat-label">Answered</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_correct }}</div>
+        <div class="stat-label">Correct</div>
+    </div>
+    {% if total_answered > 0 %}
+    <div class="stat-card">
+        <div class="stat-value">{{ (total_correct * 100 / total_answered) }}%</div>
+        <div class="stat-label">Accuracy</div>
+    </div>
+    {% endif %}
+</div>
+
+<p style="margin: 2rem 0;">
+    <a href="/quiz" class="btn">Start Random Quiz</a>
+</p>
+
+{% endblock %}

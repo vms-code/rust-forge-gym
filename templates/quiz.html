@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p><a href="/">&larr; Back to dashboard</a></p>
+
+{% if show_result %}
+    {% if is_correct %}
+    <div class="correct">
+        ✅ Correct! Great job.
+    </div>
+    {% else %}
+    <div class="incorrect">
+        ❌ Wrong answer. You entered: {{ user_answer }}<br>
+        Correct answer: {{ quiz.answer }}
+    </div>
+    {% endif %}
+
+    <div class="hint">
+        <h3>Hint</h3>
+        {{ quiz.hint|safe }}
+    </div>
+
+    <div class="explanation">
+        <h3>Explanation</h3>
+        {{ quiz.explanation|safe }}
+    </div>
+
+    <p style="margin-top: 2rem;">
+        <a href="/quiz" class="btn">Next Quiz</a>
+    </p>
+{% else %}
+
+    <pre>{{ quiz.code }}</pre>
+
+    <form class="answer-form" method="POST" action="/answer">
+        <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+        <input class="answer-input" type="text" name="answer" placeholder="What is the output?" autocomplete="off" autofocus>
+        <button class="btn" type="submit">Check Answer</button>
+    </form>
+
+{% endif %}
+
+{% endblock %}
