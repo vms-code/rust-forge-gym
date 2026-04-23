@@ -1,33 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Welcome to Rust Forge Gym</h1>
+<div class="container">
+    <h1>Training Sessions</h1>
+    <p style="color: var(--secondary-text); margin-bottom: 2rem;">Master Rust by practicing specific topics or exploring various sources.</p>
 
-<p>Test and improve your knowledge of Rust edge cases.</p>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_quizzes }}</div>
+            <div class="stat-label">Total Questions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_answered }}</div>
+            <div class="stat-label">Attempts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_correct }}</div>
+            <div class="stat-label">Correct</div>
+        </div>
+    </div>
 
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-value">{{ total_quizzes }}</div>
-        <div class="stat-label">Total Quizzes</div>
+    <h2 style="margin: 3rem 0 1.5rem;">Sources (Categories)</h2>
+    <div class="grid-3">
+        {% for cat in categories %}
+        <div class="session-card">
+            <div>
+                <span class="badge badge-cat">Source</span>
+                <h3 style="margin-bottom: 0.5rem;">{{ cat.name }}</h3>
+                <div style="font-size: 0.875rem; color: var(--secondary-text);">
+                    {{ cat.total }} questions · {{ cat.answered }} attempts
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ cat.progress }}%;"></div>
+                </div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-color);">
+                    {{ cat.mastery }}% Mastery
+                </div>
+            </div>
+            <a href="/quiz?category={{ cat.name }}" class="btn" style="margin-top: 1.5rem; width: 100%; text-align: center;">Practice</a>
+        </div>
+        {% endfor %}
     </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_answered }}</div>
-        <div class="stat-label">Answered</div>
+
+    <h2 style="margin: 4rem 0 1.5rem;">Topics (Tags)</h2>
+    <div class="grid-3">
+        {% for tag in tags %}
+        <div class="session-card">
+            <div>
+                <span class="badge badge-tag">Topic</span>
+                <h3 style="margin-bottom: 0.5rem;">{{ tag.name }}</h3>
+                <div style="font-size: 0.875rem; color: var(--secondary-text);">
+                    {{ tag.total }} questions · {{ tag.answered }} attempts
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ tag.progress }}%;"></div>
+                </div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-color);">
+                    {{ tag.mastery }}% Mastery
+                </div>
+            </div>
+            <a href="/quiz?tag={{ tag.name }}" class="btn" style="margin-top: 1.5rem; width: 100%; text-align: center;">Practice</a>
+        </div>
+        {% endfor %}
     </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_correct }}</div>
-        <div class="stat-label">Correct</div>
-    </div>
-    {% if total_answered > 0 %}
-    <div class="stat-card">
-        <div class="stat-value">{{ (total_correct * 100 / total_answered) }}%</div>
-        <div class="stat-label">Accuracy</div>
-    </div>
-    {% endif %}
 </div>
-
-<p style="margin: 2rem 0;">
-    <a href="/quiz" class="btn">Start Random Quiz</a>
-</p>
-
 {% endblock %}

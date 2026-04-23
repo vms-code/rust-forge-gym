@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Analytics Dashboard</h1>
+    <p style="color: var(--secondary-text); margin-bottom: 2rem;">A detailed breakdown of your performance across all topics and sources.</p>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_quizzes }}</div>
+            <div class="stat-label">Total Questions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_answered }}</div>
+            <div class="stat-label">Total Attempts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ accuracy }}%</div>
+            <div class="stat-label">Overall Accuracy</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem;">
+        <div class="card" style="margin-bottom: 0;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; -webkit-text-fill-color: initial; background: none;">Top Mastered Topics</h2>
+            {% for tag in tags.iter().take(5) %}
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                    <span style="font-weight: 600;">{{ tag.name }}</span>
+                    <span style="color: var(--accent-color); font-weight: 700;">{{ tag.mastery }}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ tag.mastery }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; -webkit-text-fill-color: initial; background: none;">Source Progress</h2>
+            {% for cat in categories %}
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                    <span style="font-weight: 600;">{{ cat.name }}</span>
+                    <span style="color: var(--secondary-text);">{{ cat.answered }}/{{ cat.total }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ cat.progress }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 2rem;">
+        <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; -webkit-text-fill-color: initial; background: none;">All Tags Breakdown</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid var(--border-color); color: var(--secondary-text); font-size: 0.75rem; text-transform: uppercase;">
+                    <th style="padding: 1rem 0;">Tag</th>
+                    <th style="padding: 1rem 0;">Total</th>
+                    <th style="padding: 1rem 0;">Attempts</th>
+                    <th style="padding: 1rem 0;">Mastery</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tag in tags %}
+                <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.9375rem;">
+                    <td style="padding: 1rem 0; font-weight: 600;">{{ tag.name }}</td>
+                    <td style="padding: 1rem 0;">{{ tag.total }}</td>
+                    <td style="padding: 1rem 0;">{{ tag.answered }}</td>
+                    <td style="padding: 1rem 0; font-weight: 700; color: var(--accent-color);">{{ tag.mastery }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

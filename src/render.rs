@@ -4,36 +4,26 @@ use oqueue::{Color::Red, Sequencer};
 use parking_lot::Mutex;
 use pulldown_cmark::{html as markdown_html, Parser as MarkdownParser};
 use rayon::ThreadPoolBuilder;
-use regex::Regex;
-use serde::Serialize;
 use std::collections::BTreeMap;
 use std::env;
 use std::env::consts::EXE_EXTENSION;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command, Stdio};
-use std::sync::OnceLock;
-
-pub const MARKDOWN_REGEX: &str = r"(?msx)
-    \AAnswer:\x20(?P<answer>undefined|error|[0-9]+)\n
-    Difficulty:\x20(?P<difficulty>1|2|3)\n
-    (?:Tags:\x20(?P<tags>[a-z_,\-\x20]+)\n
-    )?
-    (?:Warnings:\x20(?P<warnings>[a-z_,\x20]+)\n
-    )?\n
-    \x23\x20Hint\n
-    \n
-    (?P<hint>.*)
-    \n
-    \x23\x20Explanation\n
-    \n
-    (?P<explanation>.*)
-    \z
-";
+use std::hash::{Hash, Hasher};
 
 pub const MARKDOWN_FORMAT: &str = "
+    Type: stdout|compile|text|multiple-choice
+    Question: What does this program output?
     Answer: 999
     Difficulty: 1|2|3
+    Tags: tag1, tag2
+    Warnings: warning1, warning2
+
+    # Options
+
+    A. First option
+    B. Second option
 
     # Hint
 
@@ -44,15 +34,22 @@ pub const MARKDOWN_FORMAT: &str = "
     <!-- markdown -->
 ";
 
-pub fn build() -> Result<(), Error> {
-    let mut question_files = Vec::new();
-    for entry in fs::read_dir("quizzes/rust-quiz")? {
+fn scan_quiz_files<P: AsRef<Path>>(dir: P, files: &mut Vec<PathBuf>) -> Result<(), Error> {
+    for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.to_string_lossy().ends_with(".rs") {
-            question_files.push(path);
+        if entry.file_type()?.is_dir() {
+            scan_quiz_files(path, files)?;
+        } else if path.to_string_lossy().ends_with(".rs") {
+            files.push(path);
         }
     }
+    Ok(())
+}
+
+pub fn build() -> Result<(), Error> {
+    let mut question_files = Vec::new();
+    scan_quiz_files("quizzes", &mut question_files)?;
     question_files.sort();
 
     let cpus = num_cpus::get();
@@ -81,7 +78,7 @@ pub fn build() -> Result<(), Error> {
     Ok(())
 }
 
-fn worker(oqueue: &Sequencer, files: &[PathBuf], out: &Mutex<BTreeMap<u16, Quiz>>) {
+fn worker(oqueue: &Sequencer, files: &[PathBuf], out: &Mutex<BTreeMap<u32, Quiz>>) {
     loop {
         let task = oqueue.begin();
         let Some(rs_path) = files.get(task.index) else {
@@ -99,49 +96,192 @@ fn worker(oqueue: &Sequencer, files: &[PathBuf], out: &Mutex<BTreeMap<u16, Quiz>
     }
 }
 
-fn work(rs_path: &Path, out: &Mutex<BTreeMap<u16, Quiz>>) -> Result<(), Error> {
+fn work(rs_path: &Path, out: &Mutex<BTreeMap<u32, Quiz>>) -> Result<(), Error> {
     let code = fs::read_to_string(rs_path)?;
 
     let md_path = rs_path.with_extension("md");
     let mut md_content = fs::read_to_string(&md_path)?;
     md_content = md_content.replace("\r\n", "\n");
 
-    let markdown_regex = {
-        static REGEX: OnceLock<Regex> = OnceLock::new();
-        REGEX.get_or_init(|| Regex::new(MARKDOWN_REGEX).unwrap())
-    };
-    let Some(markdown_cap) = markdown_regex.captures(&md_content) else {
-        return Err(Error::MarkdownFormat(md_path));
-    };
+    let lines: Vec<&str> = md_content.lines().collect();
 
-    let mut warnings = Vec::new();
-    if let Some(regex_match) = markdown_cap.name("warnings") {
-        for word in regex_match.as_str().split(',') {
-            warnings.push(word.trim().to_owned());
+    // Find section boundaries
+    let mut options_start = None;
+    let mut hint_start = None;
+    let mut explanation_start = None;
+
+    for (i, line) in lines.iter().enumerate() {
+        if line.starts_with("# Options") {
+            options_start = Some(i);
+        } else if line.starts_with("# Hint") {
+            hint_start = Some(i);
+        } else if line.starts_with("# Explanation") {
+            explanation_start = Some(i);
         }
     }
 
-    let answer = markdown_cap["answer"].to_owned();
-    let difficulty = markdown_cap["difficulty"].parse().unwrap();
-    let hint = render_to_html(&markdown_cap["hint"]);
-    let explanation = render_to_html(&markdown_cap["explanation"]);
-    
-    let tags: Vec<String> = markdown_cap.name("tags")
-        .map(|m| m.as_str().split(',').map(|s| s.trim().to_owned()).collect())
-        .unwrap_or_default();
+    let first_section_start = options_start
+        .or(hint_start)
+        .or(explanation_start)
+        .unwrap_or(lines.len());
 
-    check_answer(rs_path, &answer, &warnings)?;
+    if hint_start.is_none() && options_start.is_none() && explanation_start.is_none() {
+        return Err(Error::MarkdownFormat(md_path));
+    }
 
-    let path_regex = {
-        static REGEX: OnceLock<Regex> = OnceLock::new();
-        REGEX.get_or_init(|| Regex::new(r"quizzes[\\/]rust-quiz[\\/](?P<num>[0-9]{3})[a-z0-9-]+\.rs").unwrap())
-    };
-    let number = match path_regex.captures(rs_path.to_str().unwrap()) {
-        Some(path_cap) => path_cap["num"]
-            .parse::<u16>()
-            .expect("three decimal digits"),
-        None => return Err(Error::FilenameFormat),
-    };
+    // Parse metadata from lines before the first section
+    let mut answer = String::new();
+    let mut difficulty = 1u8;
+    let mut tags = Vec::new();
+    let mut warnings = Vec::new();
+    let mut quiz_type = String::new();
+    let mut question = String::new();
+
+    let mut i = 0;
+    while i < first_section_start {
+        let line = lines[i];
+
+        if let Some(rest) = line.strip_prefix("Answer:") {
+            answer = rest.trim().to_owned();
+            // Look ahead for multi-line answer until next metadata or section
+            while i + 1 < first_section_start &&
+                  !lines[i+1].starts_with("Difficulty:") &&
+                  !lines[i+1].starts_with("Tags:") &&
+                  !lines[i+1].starts_with("Warnings:") &&
+                  !lines[i+1].starts_with("Type:") &&
+                  !lines[i+1].starts_with("Question:") &&
+                  !lines[i+1].starts_with("#")
+            {
+                i += 1;
+                let next_line = lines[i].trim();
+                if !next_line.is_empty() {
+                    if !answer.is_empty() {
+                        answer.push('\n');
+                    }
+                    answer.push_str(next_line);
+                }
+            }
+        } else if let Some(rest) = line.strip_prefix("Difficulty:") {
+            difficulty = rest.trim().parse().unwrap_or(1);
+        } else if let Some(rest) = line.strip_prefix("Tags:") {
+            tags = rest.split(',')
+                .map(|s| s.trim().trim_matches('"').trim().to_owned())
+                .filter(|s| !s.is_empty())
+                .collect();
+        } else if let Some(rest) = line.strip_prefix("Warnings:") {
+            warnings = rest.split(',')
+                .map(|s| s.trim().to_owned())
+                .filter(|s| !s.is_empty())
+                .collect();
+        } else if let Some(rest) = line.strip_prefix("Type:") {
+            quiz_type = rest.trim().to_lowercase().to_owned();
+        } else if let Some(rest) = line.strip_prefix("Question:") {
+            question = rest.trim().to_owned();
+            // Look ahead for multi-line question
+            while i + 1 < first_section_start &&
+                  !lines[i+1].starts_with("Answer:") &&
+                  !lines[i+1].starts_with("Difficulty:") &&
+                  !lines[i+1].starts_with("Tags:") &&
+                  !lines[i+1].starts_with("Warnings:") &&
+                  !lines[i+1].starts_with("Type:") &&
+                  !lines[i+1].starts_with("#")
+            {
+                i += 1;
+                let next_line = lines[i].trim();
+                if !next_line.is_empty() {
+                    if !question.is_empty() {
+                        question.push('\n');
+                    }
+                    question.push_str(next_line);
+                }
+            }
+        }
+        i += 1;
+    }
+
+    // Parse options
+    let mut options = Vec::new();
+    if let Some(opts_start) = options_start {
+        let opts_end = hint_start.or(explanation_start).unwrap_or(lines.len());
+        for line in lines.iter().skip(opts_start + 1).take(opts_end - opts_start - 1) {
+            let trimmed = line.trim();
+            if !trimmed.is_empty() {
+                options.push(trimmed.to_string());
+            }
+        }
+    }
+
+    // Parse hint and explanation
+    let mut hint_md = String::new();
+    let mut explanation_md = String::new();
+    let mut in_explanation = false;
+
+    let hint_start_idx = hint_start.unwrap_or(lines.len());
+    for line in lines.iter().skip(hint_start_idx + 1) {
+        if line.starts_with("# Explanation") {
+            in_explanation = true;
+            continue;
+        }
+        if in_explanation {
+            explanation_md.push_str(line);
+            explanation_md.push('\n');
+        } else {
+            hint_md.push_str(line);
+            hint_md.push('\n');
+        }
+    }
+
+    let hint = render_to_html(hint_md.trim());
+    let explanation = render_to_html(explanation_md.trim());
+    let question_html = render_to_html(&question);
+
+    // Validate based on quiz type
+    if quiz_type.is_empty() {
+        // Backward compatibility: infer type from answer and run full check
+        check_answer(rs_path, &answer, &warnings)?;
+        quiz_type = if answer == "undefined" || answer == "error" {
+            "compile".to_string()
+        } else {
+            "stdout".to_string()
+        };
+    } else {
+        match quiz_type.as_str() {
+            "stdout" | "compile" => {
+                check_answer(rs_path, &answer, &warnings)?;
+            }
+            "text" => {
+                // No compilation or execution check; the code is illustrative
+            }
+            "multiple-choice" => {
+                if options.is_empty() {
+                    return Err(Error::MarkdownFormat(md_path));
+                }
+                let answer_key = answer.trim();
+                let valid = options.iter().any(|opt| {
+                    let opt_trimmed = opt.trim();
+                    opt_trimmed.starts_with(answer_key)
+                });
+                if !valid {
+                    return Err(Error::WrongOutput {
+                        expected: format!("one of the options starting with '{}'", answer_key),
+                        output: format!("options: {}", options.join(", ")),
+                    });
+                }
+            }
+            _ => return Err(Error::MarkdownFormat(md_path)),
+        }
+    }
+
+    // Extract category and ID
+    let rel_path = rs_path.strip_prefix("quizzes").unwrap_or(rs_path);
+    let category = rel_path.parent()
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|| "uncategorized".to_string());
+
+    // Use a hash of the relative path as the ID
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    rel_path.hash(&mut hasher);
+    let number = (hasher.finish() & 0xFFFFFFFF) as u32;
 
     let quiz = Quiz {
         id: number,
@@ -151,6 +291,10 @@ fn work(rs_path: &Path, out: &Mutex<BTreeMap<u16, Quiz>>) -> Result<(), Error> {
         hint,
         explanation,
         tags,
+        category,
+        question: question_html,
+        quiz_type,
+        options,
     };
 
     let mut map = out.lock();
@@ -242,14 +386,15 @@ fn run(out_dir: &Path, rs_path: &Path, expected: &str) -> Result<(), Error> {
     let stem = rs_path.file_stem().unwrap();
     let exe = out_dir.join(stem).with_extension(EXE_EXTENSION);
     let output = Command::new(exe).output().map_err(Error::Execute)?;
-    let output = String::from_utf8(output.stdout)?;
+    let output = String::from_utf8(output.stdout)?.replace("\r\n", "\n");
+    let expected = expected.replace("\r\n", "\n");
 
-    if output == expected {
+    if output.trim() == expected.trim() {
         Ok(())
     } else {
         Err(Error::WrongOutput {
-            expected: expected.to_owned(),
-            output,
+            expected: expected.trim().to_owned(),
+            output: output.trim().to_owned(),
         })
     }
 }

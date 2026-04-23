@@ -1,5 +1,6 @@
 Answer: 112
 Difficulty: 3
+Tags: macros, statements, parser-edge-cases
 
 # Hint
 

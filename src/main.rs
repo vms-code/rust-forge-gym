@@ -71,7 +71,8 @@ async fn main() {
 
             let app = Router::new()
                 .route("/", get(handlers::home))
-                .route("/quiz", get(handlers::get_random_quiz))
+                .route("/quiz", get(handlers::get_quiz))
+                .route("/dashboard", get(handlers::dashboard))
                 .route("/answer", post(handlers::submit_answer))
                 .nest_service("/static", ServeDir::new("static"))
                 .with_state(state);

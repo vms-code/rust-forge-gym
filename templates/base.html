@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rust Forge Gym</title>
     <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-color: #1e293b;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --secondary-text: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,147 +25,266 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
-            color: #111;
-            max-width: 900px;
-            margin: 0 auto;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.05) 0px, transparent 50%);
+            min-height: 100vh;
             padding: 2rem 1rem;
-            background: #fafafa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         nav {
             margin-bottom: 3rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eee;
+            padding: 1rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        nav .brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            text-decoration: none;
+            letter-spacing: -0.025em;
+        }
+
+        nav .links {
+            display: flex;
+            gap: 1.5rem;
         }
 
         nav a {
-            color: #333;
+            color: var(--text-color);
             text-decoration: none;
             font-weight: 500;
+            font-size: 0.9375rem;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--accent-color);
         }
 
         h1 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
+            font-size: 2.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
         }
 
         .btn {
             display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background: #000;
+            padding: 0.75rem 1.75rem;
+            background: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 500;
+            border-radius: 12px;
+            font-size: 0.9375rem;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .btn:hover {
-            background: #333;
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
 
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2.5rem 0;
         }
 
         .stat-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            text-align: center;
+            padding: 1.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
         }
 
         .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.5rem;
+            font-weight: 800;
             margin-bottom: 0.25rem;
+            color: var(--text-color);
         }
 
         .stat-label {
-            color: #666;
+            color: var(--secondary-text);
             font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         pre {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: #0f172a;
+            color: #f8fafc;
             padding: 1.5rem;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow-x: auto;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin: 1rem 0;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .answer-form {
-            margin: 2rem 0;
+            margin: 2.5rem 0;
             display: flex;
+            flex-direction: column;
             gap: 1rem;
         }
 
         .answer-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #ddd;
-            border-radius: 6px;
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
             font-size: 1rem;
-            font-family: monospace;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            transition: border-color 0.2s;
+            background: white;
         }
 
         .answer-input:focus {
             outline: none;
-            border-color: #333;
+            border-color: var(--accent-color);
         }
 
         .correct {
-            background: #dcfce7;
+            background: #f0fdf4;
             color: #166534;
-            padding: 1rem;
-            border-radius: 6px;
-            margin: 1rem 0;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin: 1.5rem 0;
+            border: 1px solid #bbf7d0;
+            font-weight: 600;
         }
 
         .incorrect {
-            background: #fee2e2;
+            background: #fef2f2;
             color: #991b1b;
-            padding: 1rem;
-            border-radius: 6px;
-            margin: 1rem 0;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin: 1.5rem 0;
+            border: 1px solid #fecaca;
+            font-weight: 600;
         }
 
         .hint, .explanation {
             background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
         }
 
         .hint h3, .explanation h3 {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: #666;
+            font-size: 0.75rem;
+            margin-bottom: 1.25rem;
+            color: var(--secondary-text);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
+            font-weight: 700;
         }
+
+        .progress-bar-bg {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            transition: width 0.5s ease-out;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .session-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .session-card:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-cat { background: #e0e7ff; color: #4338ca; }
+        .badge-tag { background: #f3e8ff; color: #7e22ce; }
     </style>
 </head>
 <body>
     <nav>
-        <a href="/">Rust Forge Gym</a>
-        <a href="/quiz">Start Quiz</a>
+        <a href="/" class="brand">Rust Forge Gym</a>
+        <div class="links">
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/quiz" class="btn">Start Session</a>
+        </div>
     </nav>
 
     {% block content %}{% endblock %}
