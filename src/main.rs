@@ -74,6 +74,8 @@ async fn main() {
                 .route("/quiz", get(handlers::get_quiz))
                 .route("/dashboard", get(handlers::dashboard))
                 .route("/answer", post(handlers::submit_answer))
+                .route("/listing", get(handlers::list_quizzes))
+                .route("/reset", post(handlers::reset_progress))
                 .nest_service("/static", ServeDir::new("static"))
                 .with_state(state);
 

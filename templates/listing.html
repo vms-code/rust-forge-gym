@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 2rem;">
+        <a href="/" style="color: var(--secondary-text); text-decoration: none; font-weight: 500;">← Back to Home</a>
+        <h1 style="margin-top: 1rem;">{{ title }}</h1>
+        <p style="color: var(--secondary-text);">{{ quizzes.len() }} quizzes available</p>
+    </div>
+
+    <div class="grid-3">
+        {% for item in quizzes %}
+        <div class="session-card" style="position: relative;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <span class="badge badge-cat">Quiz #{{ item.quiz.id }}</span>
+                    {% if item.answered %}
+                    <span class="badge" style="background: #dcfce7; color: #166534;">✓ Done</span>
+                    {% else %}
+                    <span class="badge" style="background: #f1f5f9; color: #64748b;">New</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.875rem; color: var(--secondary-text); margin-bottom: 0.5rem;">
+                    {% for tag in item.quiz.tags %}
+                    <span class="badge badge-tag" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                <div style="font-size: 0.875rem; color: var(--secondary-text);">
+                    Difficulty: {{ item.quiz.difficulty }}/3
+                    {% if item.answered %}
+                    · {{ item.correct_attempts }} correct
+                    {% endif %}
+                </div>
+            </div>
+            <a href="/quiz?id={{ item.quiz.id }}{% if !category.is_empty() %}&category={{ category }}{% endif %}{% if !tag.is_empty() %}&tag={{ tag }}{% endif %}" class="btn" style="margin-top: 1rem; width: 100%; text-align: center;">Start Quiz</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

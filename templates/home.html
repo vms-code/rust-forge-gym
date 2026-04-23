@@ -37,7 +37,13 @@
                     {{ cat.mastery }}% Mastery
                 </div>
             </div>
-            <a href="/quiz?category={{ cat.name }}" class="btn" style="margin-top: 1.5rem; width: 100%; text-align: center;">Practice</a>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 1.5rem; width: 100%;">
+                <a href="/quiz?category={{ cat.name }}" class="btn" style="text-align: center; padding: 0.35rem 0.1rem; font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Practice</a>
+                <a href="/listing?category={{ cat.name }}" class="btn" style="background: var(--secondary-text); text-align: center; padding: 0.35rem 0.1rem; font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Browse</a>
+                <form method="POST" action="/reset?category={{ cat.name }}" style="min-width: 0;" onsubmit="return confirm('Reset progress for this category?');">
+                    <button type="submit" class="btn" style="background: #ef4444; width: 100%; padding: 0.35rem 0.1rem; font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Reset</button>
+                </form>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -59,7 +65,13 @@
                     {{ tag.mastery }}% Mastery
                 </div>
             </div>
-            <a href="/quiz?tag={{ tag.name }}" class="btn" style="margin-top: 1.5rem; width: 100%; text-align: center;">Practice</a>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1.5rem;">
+                <a href="/quiz?tag={{ tag.name }}" class="btn" style="text-align: center; padding: 0.5rem 0.25rem; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Practice</a>
+                <a href="/listing?tag={{ tag.name }}" class="btn" style="background: var(--secondary-text); text-align: center; padding: 0.5rem 0.25rem; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Browse</a>
+                <form method="POST" action="/reset?tag={{ tag.name }}" style="min-width: 0;" onsubmit="return confirm('Reset progress for this tag?');">
+                    <button type="submit" class="btn" style="background: #ef4444; width: 100%; padding: 0.5rem 0.25rem; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Reset</button>
+                </form>
+            </div>
         </div>
         {% endfor %}
     </div>

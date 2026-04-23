@@ -243,7 +243,7 @@
 
         .grid-3 {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 1.5rem;
         }
 
@@ -278,11 +278,14 @@
     </style>
 </head>
 <body>
-    <nav>
+        <nav>
         <a href="/" class="brand">Rust Forge Gym</a>
         <div class="links">
             <a href="/">Home</a>
             <a href="/dashboard">Dashboard</a>
+            <form method="POST" action="/reset" style="display:inline;" onsubmit="return confirm('Reset ALL progress? This cannot be undone.');">
+                <button type="submit" style="background: #ef4444; color: white; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">Global Reset</button>
+            </form>
             <a href="/quiz" class="btn">Start Session</a>
         </div>
     </nav>
