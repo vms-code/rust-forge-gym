@@ -1,9 +1,9 @@
 fn main() {
     let x: i32 = 1;
-    let _y = x;          // x is Copy → y is a copy, x remains valid
+    let _y = x;
     print!("{}", x);
 
     let a = String::from("2");
-    let b = a;          // a is moved into b → a is no longer valid
+    let b = a;
     print!("{}", b);
 }

@@ -4,7 +4,7 @@ fn greet(name: &String) {
 
 fn main() {
     let name = String::from("Alice");
-    greet(&name); // borrows — name is still usable
-    greet(&name); // borrows again — still valid
+    greet(&name);
+    greet(&name);
     println!("name is still: {}", name);
 }

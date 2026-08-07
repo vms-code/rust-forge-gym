@@ -1,6 +1,6 @@
 fn make_ref<'a>() -> &'a String {
     let s = String::from("hello");
-    &s // ERROR: `s` does not live long enough — returns reference to local data
+    &s
 }
 
 fn main() {

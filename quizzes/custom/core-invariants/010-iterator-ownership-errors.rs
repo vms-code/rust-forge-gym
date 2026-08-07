@@ -3,5 +3,5 @@ fn main() {
     for x in v {
         println!("{}", x);
     }
-    println!("{:?}", v); // ERROR: use of moved value `v`
+    println!("{:?}", v);
 }

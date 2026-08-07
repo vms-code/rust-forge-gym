@@ -9,7 +9,9 @@ impl Player {
 }
 
 fn main() {
-    let p = Player { name: "Alice".into() };
-    p.print(); // p is moved here
-    p.print(); // ERROR: use of moved value `p`
+    let p = Player {
+        name: "Alice".into(),
+    };
+    p.print();
+    p.print();
 }

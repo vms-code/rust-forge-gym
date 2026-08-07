@@ -67,7 +67,6 @@ All exercises should *progress in difficulty* and *vary topics*, ensuring no two
 
 # Part 7 — Output: Agent Prompt
 
-```plaintext
 You are a Rust exercise generator. Produce a daily set of exercises in JSON format. Each day should include:
 - **5–10 Prediction tasks:** For each, provide a Rust code snippet and ask whether it compiles. The answer must include “Yes” or “No”, a brief explanation, the invariant violated if any, and the correct compilation status.
 - **5–10 Fix-It tasks:** For each, give broken Rust code (one error) and instructions to fix with minimal changes. The output should include the fixed code, an explanation of the fix, and the violated rule.
@@ -76,89 +75,6 @@ You are a Rust exercise generator. Produce a daily set of exercises in JSON form
 
 All tasks must target core Rust invariants (ownership, borrowing rules, lifetimes, pattern exhaustiveness, iterator behavior, etc.), with increasing difficulty across the day. Ensure variation: do not repeat the same code patterns. 
 
-Output the result as a JSON object with fields for each exercise type. Each exercise entry should have keys like `type`, `code`, `question`, `answer`, `explanation`, and `common_mistake`. The format must be strict JSON so it can be parsed and evaluated. 
+Output the result as rust and markdown file pairs with the same format from other ones on quizzes/*. Each exercise entry should have keys like `type`, `code`, `question`, `answer`, `explanation`, and `common_mistake`. The format must be strict JSON so it can be parsed and evaluated. 
 
-For example, each task object should look like:
-```
-{
-  "type": "prediction" | "fix" | "transform" | "micro",
-  "code": "<code snippet here>",
-  "question": "<what to do>",
-  "answer": "<the correct result or fixed code>",
-  "explanation": "<expected reasoning steps>",
-  "common_mistake": "<what a learner might do wrong>"
-}
-```
-Make sure answers cite the specific invariant rule and show minimal solutions. 
-```
 
-# Part 8 — Example Output
-
-```json
-{
-  "prediction": [
-    {
-      "type": "prediction",
-      "code": "fn main() {\n    let mut s = String::from(\"hi\");\n    let r1 = &s;\n    let r2 = &mut s;\n    println!(\"{} {}\", r1, r2);\n}",
-      "question": "Does this compile? If not, why, and what rule is violated?",
-      "answer": "No – it fails to compile.",
-      "explanation": "Error: cannot borrow `s` as mutable because it is also borrowed as immutable. The rule violated is Rust’s aliasing rule: you cannot have a mutable borrow (`&mut s`) while an immutable borrow (`&s`) is still in use【46†L251-L259】.",
-      "common_mistake": "Thinking that borrowing `s` immutably and then mutably in sequence is allowed; forgetting that `r1` is still in scope when `r2` is created."
-    },
-    {
-      "type": "prediction",
-      "code": "fn take(v: Vec<i32>) {}\nfn main() {\n    let v = vec![1,2,3];\n    take(v.clone());\n    println!(\"{:?}\", v);\n}",
-      "question": "Will this code compile? If not, why, and what rule is violated?",
-      "answer": "Yes – it compiles successfully.",
-      "explanation": "The vector `v` is cloned for the call to `take`, so the original `v` is not moved. Using `v` after the call is fine because the clone was moved, not `v` itself【50†L90-L98】.",
-      "common_mistake": "Thinking that `take(v.clone())` still moves `v`; actually it moves the cloned copy, so `v` remains valid."
-    }
-  ],
-  "fix": [
-    {
-      "type": "fix",
-      "code": "struct S { x: i32, }\nfn main() {\n    let mut s = S { x: 1 };\n    let r1 = &s;\n    let r2 = &mut s;\n    *r2 = S { x: 2 };\n    println!(\"{}\", r1.x);\n}",
-      "question": "Fix the code with minimal changes so it compiles.",
-      "answer": "```rust\nstruct S { x: i32, }\nfn main() {\n    let mut s = S { x: 1 };\n    let r1 = &s;\n    // end r1's scope by not using it after this point\n    println!(\"{}\", r1.x);\n    let r2 = &mut s;\n    *r2 = S { x: 2 };\n    println!(\"{}\", r2.x);\n}```",
-      "explanation": "The mutable borrow `r2` cannot coexist with the active immutable borrow `r1`. We fix this by ending the use of `r1` (printing and finishing its scope) before creating `r2`, so the borrows don’t overlap【46†L263-L271】.",
-      "common_mistake": "Moving the mutable borrow above the println, which still conflicts if `r1` is in scope."
-    },
-    {
-      "type": "fix",
-      "code": "fn main() {\n    let s = String::from(\"hello\");\n    let r = &s;\n    drop(s);\n    println!(\"{}\", r);\n}",
-      "question": "Fix the code so it compiles with minimal changes.",
-      "answer": "```rust\nfn main() {\n    let s = String::from(\"hello\");\n    let r = &s;\n    println!(\"{}\", r);  // use r (and s) before drop\n    drop(s);\n}```",
-      "explanation": "We moved the `drop(s)` call after using `r`. Originally `drop(s)` would free `s` while `r` still refers to it, violating the reference validity rule. By printing before dropping, `r` is not dangling【33†L225-L233】.",
-      "common_mistake": "Attempting to clone `s` unnecessarily or forgetting that `drop(s)` removes `s`."
-    }
-  ],
-  "transform": [
-    {
-      "type": "transform",
-      "code": "let nums = vec![1,2,3,4];\nlet mut evens = Vec::new();\nfor n in nums {\n    if n % 2 == 0 {\n        evens.push(n);\n    }\n}\nprintln!(\"{:?}\", evens);\n",
-      "question": "Refactor this code to use an iterator chain instead of a loop. (No `.clone()` of the vector.)",
-      "answer": "```rust\nlet nums = vec![1,2,3,4];\nlet evens: Vec<_> = nums.into_iter().filter(|n| n % 2 == 0).collect();\nprintln!(\"{:?}\", evens);\n```",
-      "explanation": "We replaced the manual loop with `into_iter().filter().collect()`. This consumes `nums` (moving it) and builds `evens` in one expression. This is idiomatic and avoids explicit pushes【50†L178-L187】.",
-      "common_mistake": "Using `.iter()` and then pushing to `evens` would require referencing and not moving `nums`. The most straightforward is `into_iter().filter().collect()`."
-    },
-    {
-      "type": "transform",
-      "code": "let mut data = vec![10, 20, 30];\nlet mut sum = 0;\nfor i in 0..data.len() {\n    sum += data[i];\n}\nprintln!(\"Sum = {}\", sum);\n",
-      "question": "Rewrite using `iter()` to avoid indexing.",
-      "answer": "```rust\nlet data = vec![10, 20, 30];\nlet sum: i32 = data.iter().sum();\nprintln!(\"Sum = {}\", sum);\n```",
-      "explanation": "Using `.iter().sum()` replaces the manual loop. This leverages the Iterator trait and ensures the code still computes the sum. We also removed the mutable borrow of `data`, as `.iter()` borrows it immutably.",
-      "common_mistake": "Using `.iter().for_each(|x| sum += x);` requires `sum` to be mutable; using `.sum()` is more concise."
-    }
-  ],
-  "micro": [
-    {
-      "type": "micro",
-      "code": "// Build a stack of integers supporting push, pop, and peek\nstruct Stack { /* your code */ }\n",
-      "question": "Implement a simple `Stack<i32>` from scratch without using Vec. Ensure no aliasing/mutable borrow violations. Provide push, pop, and peek methods.",
-      "answer": "(A full implementation would be given here, e.g. using a linked list or Box. The solution should respect ownership.)",
-      "explanation": "A valid answer might use `Option<Box<Node>>` for the stack links. Students must manage ownership of nodes and ensure only one mutable reference is ever active (e.g. `&mut self` in methods). The challenge highlights dynamic allocation and borrows.",
-      "common_mistake": "Using global static or multiple mutable aliases. Another mistake is forgetting to handle the empty stack case in `pop`."
-    }
-  ]
-}
-```

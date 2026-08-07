@@ -79,7 +79,7 @@
   },
   "205414431": {
     "id": 205414431,
-    "code": "fn main() {\r\n    let v = vec![1, 2, 3];\r\n    for x in v {\r\n        print!(\"{}\", x);\r\n    }\r\n    // v has been consumed (moved into the iterator)\r\n    // println!(\"{:?}\", v); // would cause \"use of moved value\"\r\n}",
+    "code": "fn main() {\r\n    let v = vec![1, 2, 3];\r\n    for x in v {\r\n        print!(\"{}\", x);\r\n    }\r\n}\r\n",
     "difficulty": 2,
     "answer": "123",
     "hint": "<p>After the <code>for</code> loop finishes, the original vector can no longer be used.</p>\n",
@@ -109,7 +109,7 @@
   },
   "240051391": {
     "id": 240051391,
-    "code": "fn make_ref<'a>() -> &'a String {\r\n    let s = String::from(\"hello\");\r\n    &s // ERROR: `s` does not live long enough — returns reference to local data\r\n}\r\n\r\nfn main() {\r\n    let _r = make_ref();\r\n}\r\n",
+    "code": "fn make_ref<'a>() -> &'a String {\r\n    let s = String::from(\"hello\");\r\n    &s\r\n}\r\n\r\nfn main() {\r\n    let _r = make_ref();\r\n}\r\n",
     "difficulty": 2,
     "answer": "error",
     "hint": "<p>A reference cannot outlive the value it points to — returning a reference to a local variable is always rejected.</p>\n",
@@ -318,7 +318,7 @@
   },
   "777787072": {
     "id": 777787072,
-    "code": "struct Player {\r\n    name: String,\r\n}\r\n\r\nimpl Player {\r\n    fn print(self) {\r\n        println!(\"{}\", self.name);\r\n    }\r\n}\r\n\r\nfn main() {\r\n    let p = Player { name: \"Alice\".into() };\r\n    p.print(); // p is moved here\r\n    p.print(); // ERROR: use of moved value `p`\r\n}\r\n",
+    "code": "struct Player {\r\n    name: String,\r\n}\r\n\r\nimpl Player {\r\n    fn print(self) {\r\n        println!(\"{}\", self.name);\r\n    }\r\n}\r\n\r\nfn main() {\r\n    let p = Player {\r\n        name: \"Alice\".into(),\r\n    };\r\n    p.print();\r\n    p.print();\r\n}\r\n",
     "difficulty": 2,
     "answer": "error",
     "hint": "<p>A method that takes <code>self</code> (by value) moves the receiver — the caller can no longer use it afterward.</p>\n",
@@ -381,7 +381,7 @@
   },
   "1051780592": {
     "id": 1051780592,
-    "code": "fn main() {\r\n    let mut a = 5;\r\n    let r1 = &a;       // immutable borrow\r\n    let r2 = &mut a;   // ERROR: cannot borrow `a` as mutable because it is also borrowed as immutable\r\n    println!(\"{}, {}\", r1, r2);\r\n}\r\n",
+    "code": "fn main() {\r\n    let mut a = 5;\r\n    let r1 = &a;\r\n    let r2 = &mut a;\r\n    println!(\"{}, {}\", r1, r2);\r\n}\r\n",
     "difficulty": 2,
     "answer": "error",
     "hint": "<p>An active immutable borrow and a mutable borrow of the same value cannot coexist.</p>\n",
@@ -466,7 +466,7 @@
   },
   "1264029513": {
     "id": 1264029513,
-    "code": "#[derive(Debug)]\r\nstruct Person {\r\n    name: String,\r\n    age: u8,\r\n}\r\n\r\nfn main() {\r\n    let person = Person { name: \"Alice\".into(), age: 30 };\r\n    let Person { name, ref age } = person; // moves `name`, borrows `age`\r\n    println!(\"{}\", name);\r\n    println!(\"{}\", age);\r\n    println!(\"{:?}\", person); // ERROR: `person` partially moved\r\n}\r\n",
+    "code": "#[derive(Debug)]\r\nstruct Person {\r\n    name: String,\r\n    age: u8,\r\n}\r\n\r\nfn main() {\r\n    let person = Person {\r\n        name: \"Alice\".into(),\r\n        age: 30,\r\n    };\r\n    let Person { name, ref age } = person;\r\n    println!(\"{}\", name);\r\n    println!(\"{}\", age);\r\n    println!(\"{:?}\", person);\r\n}\r\n",
     "difficulty": 3,
     "answer": "error",
     "hint": "<p>Moving out a single field of a struct invalidates the entire struct binding, even if other fields were only borrowed.</p>\n",
@@ -583,7 +583,7 @@
   },
   "1543211836": {
     "id": 1543211836,
-    "code": "fn main() {\r\n    let v = vec![1, 2, 3];\r\n    for x in v {\r\n        println!(\"{}\", x);\r\n    }\r\n    println!(\"{:?}\", v); // ERROR: use of moved value `v`\r\n}\r\n",
+    "code": "fn main() {\r\n    let v = vec![1, 2, 3];\r\n    for x in v {\r\n        println!(\"{}\", x);\r\n    }\r\n    println!(\"{:?}\", v);\r\n}\r\n",
     "difficulty": 2,
     "answer": "error",
     "hint": "<p><code>for x in v</code> is sugar for <code>v.into_iter()</code>, which moves <code>v</code> — you cannot use it after the loop.</p>\n",
@@ -614,7 +614,7 @@
   },
   "1638533963": {
     "id": 1638533963,
-    "code": "fn main() {\r\n    let x: i32 = 1;\r\n    let _y = x;          // x is Copy → y is a copy, x remains valid\r\n    print!(\"{}\", x);\r\n\r\n    let a = String::from(\"2\");\r\n    let b = a;          // a is moved into b → a is no longer valid\r\n    print!(\"{}\", b);\r\n}",
+    "code": "fn main() {\r\n    let x: i32 = 1;\r\n    let _y = x;\r\n    print!(\"{}\", x);\r\n\r\n    let a = String::from(\"2\");\r\n    let b = a;\r\n    print!(\"{}\", b);\r\n}\r\n",
     "difficulty": 2,
     "answer": "12",
     "hint": "<p><code>i32</code> can be used after assignment, but <code>String</code> cannot.</p>\n",
@@ -1014,7 +1014,7 @@
   },
   "3342707217": {
     "id": 3342707217,
-    "code": "fn main() {\r\n    let mut x = 5;\r\n    let r1 = &x;           // immutable borrow\r\n    let r2 = &mut x;       // ERROR: cannot borrow `x` as mutable\r\n    println!(\"{}, {}\", r1, r2);\r\n}",
+    "code": "fn main() {\r\n    let mut x = 5;\r\n    let r1 = &x;\r\n    let r2 = &mut x;\r\n    println!(\"{}, {}\", r1, r2);\r\n}\r\n",
     "difficulty": 1,
     "answer": "error",
     "hint": "<p>You cannot create a mutable reference while any immutable reference to the same data is still active.</p>\n",
@@ -1060,7 +1060,7 @@
   },
   "3630435313": {
     "id": 3630435313,
-    "code": "fn dangle() -> &String {\r\n    let s = String::from(\"hello\");\r\n    &s  // ERROR: `s` does not live long enough\r\n}\r\n\r\nfn main() {}",
+    "code": "fn dangle() -> &String {\r\n    let s = String::from(\"hello\");\r\n    &s\r\n}\r\n\r\nfn main() {}\r\n",
     "difficulty": 2,
     "answer": "error",
     "hint": "<p>A reference returned from a function must not point to a local variable that is dropped when the function ends.</p>\n",
@@ -1077,7 +1077,7 @@
   },
   "3644388712": {
     "id": 3644388712,
-    "code": "enum E { A, B }\r\n\r\nfn main() {\r\n    match E::A {\r\n        E::A => println!(\"A\"),\r\n        // missing E::B arm → non-exhaustive\r\n    }\r\n}",
+    "code": "enum E {\r\n    A,\r\n    B,\r\n}\r\n\r\nfn main() {\r\n    match E::A {\r\n        E::A => println!(\"A\"),\r\n    }\r\n}\r\n",
     "difficulty": 1,
     "answer": "error",
     "hint": "<p>The compiler requires every possible variant of an <code>enum</code> to be handled in a <code>match</code>.</p>\n",
@@ -1106,7 +1106,7 @@
   },
   "3751171551": {
     "id": 3751171551,
-    "code": "fn greet(name: &String) {\r\n    println!(\"Hello, {}!\", name);\r\n}\r\n\r\nfn main() {\r\n    let name = String::from(\"Alice\");\r\n    greet(&name); // borrows — name is still usable\r\n    greet(&name); // borrows again — still valid\r\n    println!(\"name is still: {}\", name);\r\n}\r\n",
+    "code": "fn greet(name: &String) {\r\n    println!(\"Hello, {}!\", name);\r\n}\r\n\r\nfn main() {\r\n    let name = String::from(\"Alice\");\r\n    greet(&name);\r\n    greet(&name);\r\n    println!(\"name is still: {}\", name);\r\n}\r\n",
     "difficulty": 1,
     "answer": "Hello, Alice!\nHello, Alice!\nname is still: Alice",
     "hint": "<p>Passing <code>&amp;name</code> borrows the <code>String</code> — the caller keeps ownership and can use it again afterward.</p>\n",

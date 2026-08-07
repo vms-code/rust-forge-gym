@@ -1,8 +1,10 @@
-enum E { A, B }
+enum E {
+    A,
+    B,
+}
 
 fn main() {
     match E::A {
         E::A => println!("A"),
-        // missing E::B arm → non-exhaustive
     }
 }

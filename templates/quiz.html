@@ -39,6 +39,7 @@
 
         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
             <a href="/" class="btn" style="background: var(--secondary-text);">Back Home</a>
+            <a href="/quiz?id={{ quiz.id }}{% if !category.is_empty() %}&category={{ category }}{% else if !tag.is_empty() %}&tag={{ tag }}{% endif %}" class="btn" style="background: #a855f7;">Try Again</a>
             <a href="/quiz{% if !category.is_empty() %}?category={{ category }}{% else if !tag.is_empty() %}?tag={{ tag }}{% endif %}" class="btn">Next Quiz</a>
         </div>
     {% else %}
